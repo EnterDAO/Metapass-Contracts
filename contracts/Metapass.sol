@@ -7,25 +7,25 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ERC721PresetMinterPauserAutoId.sol";
-import "./ILobster.sol";
-import "./LobsterGeneGenerator.sol";
+import "./IMetapass.sol";
+import "./MetapassGeneGenerator.sol";
 import "./HasSecondarySaleFees.sol";
 
-contract Lobster is
-    ILobster,
+contract Metapass is
+    IMetapass,
     ERC721PresetMinterPauserAutoId,
     ReentrancyGuard,
     HasSecondarySaleFees
 {
-    using LobsterGeneGenerator for LobsterGeneGenerator.Gene;
+    using MetapassGeneGenerator for MetapassGeneGenerator.Gene;
     using SafeMath for uint256;
     using Counters for Counters.Counter;
 
-    LobsterGeneGenerator.Gene internal geneGenerator;
+    MetapassGeneGenerator.Gene internal geneGenerator;
 
     address payable public daoAddress;
     address payable public multiSig;
-    uint256 public lobsterPrice;
+    uint256 public metapassPrice;
     uint256 public maxSupply;
     uint256 public bulkBuyLimit;
     string public arweaveAssetsJSON;
@@ -35,16 +35,16 @@ contract Lobster is
         uint256 oldGene,
         uint256 newGene,
         uint256 price,
-        Lobster.LobsterEventType eventType
+        Metapass.MetapassEventType eventType
     );
     event TokenMinted(uint256 indexed tokenId, uint256 newGene);
-    event LobsterPriceChanged(uint256 newLobsterPrice);
+    event MetapassPriceChanged(uint256 newMetapassPrice);
     event MaxSupplyChanged(uint256 newMaxSupply);
     event BulkBuyLimitChanged(uint256 newBulkBuyLimit);
     event BaseURIChanged(string baseURI);
     event arweaveAssetsJSONChanged(string arweaveAssetsJSON);
 
-    enum LobsterEventType {
+    enum MetapassEventType {
         MINT,
         TRANSFER
     }
@@ -57,14 +57,14 @@ contract Lobster is
         string memory symbol,
         string memory baseURI,
         address payable _daoAddress,
-        uint256 _lobsterPrice,
+        uint256 _metapassPrice,
         uint256 _maxSupply,
         uint256 _bulkBuyLimit,
         string memory _arweaveAssetsJSON,
         address payable _multiSig
     ) ERC721PresetMinterPauserAutoId(name, symbol, baseURI) {
         daoAddress = _daoAddress;
-        lobsterPrice = _lobsterPrice;
+        metapassPrice = _metapassPrice;
         maxSupply = _maxSupply;
         bulkBuyLimit = _bulkBuyLimit;
         arweaveAssetsJSON = _arweaveAssetsJSON;
@@ -98,7 +98,7 @@ contract Lobster is
             _genes[tokenId],
             _genes[tokenId],
             0,
-            LobsterEventType.TRANSFER
+            MetapassEventType.TRANSFER
         );
     }
 
@@ -110,13 +110,13 @@ contract Lobster is
         uint256 tokenId = _tokenIdTracker.current();
         _genes[tokenId] = geneGenerator.random();
 
-        (bool transferToDaoStatus, ) = daoAddress.call{value: lobsterPrice}("");
+        (bool transferToDaoStatus, ) = daoAddress.call{value: metapassPrice}("");
         require(
             transferToDaoStatus,
             "Address: unable to send value, recipient may have reverted"
         );
 
-        uint256 excessAmount = msg.value.sub(lobsterPrice);
+        uint256 excessAmount = msg.value.sub(metapassPrice);
         if (excessAmount > 0) {
             (bool returnExcessStatus, ) = _msgSender().call{
                 value: excessAmount
@@ -132,8 +132,8 @@ contract Lobster is
             tokenId,
             0,
             _genes[tokenId],
-            lobsterPrice,
-            LobsterEventType.MINT
+            metapassPrice,
+            MetapassEventType.MINT
         );
     }
 
@@ -163,14 +163,14 @@ contract Lobster is
         );
 
         (bool transferToDaoStatus, ) = daoAddress.call{
-            value: lobsterPrice.mul(amount)
+            value: metapassPrice.mul(amount)
         }("");
         require(
             transferToDaoStatus,
             "Address: unable to send value, recipient may have reverted"
         );
 
-        uint256 excessAmount = msg.value.sub(lobsterPrice.mul(amount));
+        uint256 excessAmount = msg.value.sub(metapassPrice.mul(amount));
         if (excessAmount > 0) {
             (bool returnExcessStatus, ) = _msgSender().call{
                 value: excessAmount
@@ -191,8 +191,8 @@ contract Lobster is
                 tokenId,
                 0,
                 _genes[tokenId],
-                lobsterPrice,
-                LobsterEventType.MINT
+                metapassPrice,
+                MetapassEventType.MINT
             );
         }
     }
@@ -209,15 +209,15 @@ contract Lobster is
         revert("Should not use this one");
     }
 
-    function setLobsterPrice(uint256 newLobsterPrice)
+    function setMetapassPrice(uint256 newMetapassPrice)
         public
         virtual
         override
         onlyDAO
     {
-        lobsterPrice = newLobsterPrice;
+        metapassPrice = newMetapassPrice;
 
-        emit LobsterPriceChanged(newLobsterPrice);
+        emit MetapassPriceChanged(newMetapassPrice);
     }
 
     function setMaxSupply(uint256 _maxSupply) public virtual override onlyDAO {

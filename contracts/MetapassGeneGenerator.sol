@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.7.0;
 
-library LobsterGeneGenerator {
+library MetapassGeneGenerator {
     struct Gene {
         uint256 lastRandom;
     }

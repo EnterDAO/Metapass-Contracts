@@ -15,22 +15,22 @@ async function main() {
 
   // We get the contract to deploy
   console.log("Starting deploy...")
-  const Lobster = await hre.ethers.getContractFactory("Lobster");
-  const lobster = await Lobster.deploy(
+  const Metapass = await hre.ethers.getContractFactory("Metapass");
+  const metapass = await Metapass.deploy(
     process.env.COLLECTION_NAME,
     process.env.TOKEN_NAME,
     process.env.METADATA_URI,
     process.env.DAO_ADDRESS,
     ethers.utils.parseEther(process.env.MINT_PRICE),
-    process.env.LOBSTER_SUPPLY,
+    process.env.METAPASS_SUPPLY,
     process.env.BULK_BUY_LIMIT,
     process.env.ARWEAVE_ADDRESS,
     process.env.MULTISIG_ADDRESS
   );
 
-  await lobster.deployed();
+  await metapass.deployed();
 
-  console.log("Lobby Lobsters deployed to:", lobster.address);
+  console.log("Metapass deployed to:", metapass.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
