@@ -6,6 +6,8 @@ module.exports = [
   ethers.utils.parseEther(process.env.MINT_PRICE),
   process.env.METAPASS_SUPPLY,
   process.env.BULK_BUY_LIMIT,
-  process.env.ARWEAVE_ADDRESS,
-  process.env.MULTISIG_ADDRESS
+  process.env.MAX_NFTS_PER_WALLET,
+  process.env.MAX_NFTS_PER_WALLET_PRESALE,
+  process.env.PRESALE_START,
+  process.env.OFFICIAL_SALE_START,
 ];

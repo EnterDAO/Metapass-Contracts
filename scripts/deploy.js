@@ -4,6 +4,7 @@
 // When running the script with `npx hardhat run <script>` you'll find the Hardhat
 // Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
+const whitelist = require("../scripts/whitelist.json");
 
 async function main() {
   // Hardhat always runs the compile task when running scripts with its command
@@ -24,12 +25,14 @@ async function main() {
     ethers.utils.parseEther(process.env.MINT_PRICE),
     process.env.METAPASS_SUPPLY,
     process.env.BULK_BUY_LIMIT,
-    process.env.ARWEAVE_ADDRESS,
-    process.env.MULTISIG_ADDRESS
+    process.env.MAX_NFTS_PER_WALLET,
+    process.env.MAX_NFTS_PER_WALLET_PRESALE,
+    process.env.PRESALE_START,
+    process.env.OFFICIAL_SALE_START,
   );
 
   await metapass.deployed();
-
+  await metapass.addToPresaleList(whitelist.slice(0, 1000));
   console.log("Metapass deployed to:", metapass.address);
 }
 

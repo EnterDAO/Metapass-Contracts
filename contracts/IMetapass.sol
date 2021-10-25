@@ -8,6 +8,8 @@ interface IMetapass is IERC721 {
 
     function mint() external payable;
 
+    function preSaleMint() external payable;
+
     function bulkBuy(uint256 amount) external payable;
 
     function lastTokenId() external view returns (uint256 tokenId);
