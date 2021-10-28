@@ -27,4 +27,27 @@ library MetapassGeneGenerator {
         );
         return g.lastRandom;
     }
+
+    function randomToken(Gene storage g, uint salt) internal returns (uint256) {
+        g.lastRandom = uint256(
+            keccak256(
+                abi.encode(
+                    keccak256(
+                        abi.encodePacked(
+                            msg.sender,
+                            tx.origin,
+                            gasleft(),
+                            g.lastRandom,
+                            block.timestamp,
+                            block.number,
+                            blockhash(block.number),
+                            blockhash(block.number - 100),
+                            salt
+                        )
+                    )
+                )
+            )
+        );
+        return g.lastRandom;
+    }
 }

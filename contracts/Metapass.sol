@@ -31,6 +31,9 @@ contract Metapass is
     uint256 public maxNFTsPerWallet;
     uint256 public maxNFTsPerWalletPresale;
 
+    uint256 private reservedNFTsCount = 50;
+    uint256 private uniquesCount = 10;
+
     event TokenMorphed(
         uint256 indexed tokenId,
         uint256 oldGene,
@@ -51,6 +54,7 @@ contract Metapass is
 
     // Optional mapping for token URIs
     mapping(uint256 => uint256) internal _genes;
+    mapping(uint256 => bool) internal _uniqueGenes;
 
     // Presale configs
     uint256 presaleStart;
@@ -79,11 +83,19 @@ contract Metapass is
         maxNFTsPerWalletPresale = _maxNFTsPerWalletPresale;
         presaleStart = _presaleStart;
         officialSaleStart = _officialSaleStart;
+        generateUniques();
     }
 
     modifier onlyDAO() {
         require(msg.sender == daoAddress, "Not called from the dao");
         _;
+    }
+
+    function generateUniques() internal {
+        for(uint256 i = 1; i <= uniquesCount; i++) { 
+            uint256 selectedToken = geneGenerator.randomToken(i**i) % maxSupply;
+            _uniqueGenes[selectedToken] = true;
+        }
     }
 
     function addToPresaleList(address[] calldata entries) external onlyOwner {
@@ -114,6 +126,14 @@ contract Metapass is
         return presaleList[_address];
     }
 
+    function setGene(uint256 tokenId) internal returns (uint256) {
+        if (_uniqueGenes[tokenId]) {
+            return tokenId;
+        } else {
+            return geneGenerator.random();
+        }
+    }
+
     function geneOf(uint256 tokenId)
         public
         view
@@ -139,6 +159,29 @@ contract Metapass is
         );
     }
 
+    function reserveMint(uint256 amount) external override onlyOwner {
+        require(_tokenIdTracker.current().add(amount) <= maxSupply, "Total supply reached");
+        require(balanceOf(msg.sender).add(amount) <= reservedNFTsCount, "Mint limit exceeded");
+
+        for (uint256 i = 0; i < amount; i++) {
+            _tokenIdTracker.increment();
+
+            uint256 tokenId = _tokenIdTracker.current();
+            _genes[tokenId] = setGene(tokenId);
+            _mint(_msgSender(), tokenId);
+            _registerFees(tokenId);
+
+            emit TokenMinted(tokenId, _genes[tokenId]);
+            emit TokenMorphed(
+                tokenId,
+                0,
+                _genes[tokenId],
+                metapassPrice,
+                MetapassEventType.MINT
+            );
+        }
+    }
+
     function mint() public payable override nonReentrant {
         require(_tokenIdTracker.current() < maxSupply, "Total supply reached");
         require(!isPresale() && isSale(), "Official sale not started");
@@ -152,7 +195,7 @@ contract Metapass is
         _tokenIdTracker.increment();
 
         uint256 tokenId = _tokenIdTracker.current();
-        _genes[tokenId] = geneGenerator.random();
+        _genes[tokenId] = setGene(tokenId);
 
         (bool transferToDaoStatus, ) = daoAddress.call{value: metapassPrice}("");
         require(
@@ -196,7 +239,7 @@ contract Metapass is
         emit SecondarySaleFees(_tokenId, _recipients, _bps);
     }
 
-    function preSaleMint() public payable override nonReentrant {
+    function presaleMint() public payable override nonReentrant {
         require(_tokenIdTracker.current() < maxSupply, "Total supply reached");
         require(isInPresaleWhitelist(msg.sender), "Not in presale list");
         require(isPresale(), "Presale not started/already finished");
@@ -205,7 +248,7 @@ contract Metapass is
         _tokenIdTracker.increment();
 
         uint256 tokenId = _tokenIdTracker.current();
-        _genes[tokenId] = geneGenerator.random();
+        _genes[tokenId] = setGene(tokenId);
 
         (bool transferToDaoStatus, ) = daoAddress.call{value: metapassPrice}("");
         require(
@@ -274,7 +317,7 @@ contract Metapass is
             _tokenIdTracker.increment();
 
             uint256 tokenId = _tokenIdTracker.current();
-            _genes[tokenId] = geneGenerator.random();
+            _genes[tokenId] = setGene(tokenId);
             _mint(_msgSender(), tokenId);
             _registerFees(tokenId);
 
