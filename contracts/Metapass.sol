@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.9;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./ERC721PresetMinterPauserAutoId.sol";
+import "@openzeppelin/contracts/token/ERC721/presets/ERC721PresetMinterPauserAutoId.sol";
 import "./IMetapass.sol";
 import "./MetapassGeneGenerator.sol";
 import "./HasSecondarySaleFees.sol";
@@ -21,6 +21,9 @@ contract Metapass is
     using MetapassGeneGenerator for MetapassGeneGenerator.Gene;
     using SafeMath for uint256;
     using Counters for Counters.Counter;
+
+    Counters.Counter internal _tokenIdTracker;
+    string private _baseTokenURI;
 
     MetapassGeneGenerator.Gene internal geneGenerator;
 
@@ -57,9 +60,11 @@ contract Metapass is
     mapping(uint256 => bool) internal _uniqueGenes;
 
     // Presale configs
-    uint256 presaleStart;
-    uint256 officialSaleStart;
+    uint256 public presaleStart;
+    uint256 public officialSaleStart;
     mapping(address => bool) public presaleList;
+
+    uint256 constant MAX_INT = 2**256 - 1;
 
     constructor(
         string memory name,
@@ -78,36 +83,40 @@ contract Metapass is
         metapassPrice = _metapassPrice;
         maxSupply = _maxSupply;
         bulkBuyLimit = _bulkBuyLimit;
-        geneGenerator.random();
         maxNFTsPerWallet = _maxNFTsPerWallet;
         maxNFTsPerWalletPresale = _maxNFTsPerWalletPresale;
         presaleStart = _presaleStart;
         officialSaleStart = _officialSaleStart;
+        geneGenerator.random();
         generateUniques();
     }
 
     modifier onlyDAO() {
-        require(msg.sender == daoAddress, "Not called from the dao");
+        require(_msgSender() == daoAddress, "Not called from the dao");
         _;
     }
 
     function generateUniques() internal {
-        for(uint256 i = 1; i <= uniquesCount; i++) { 
-            uint256 selectedToken = geneGenerator.randomToken(i**i) % maxSupply;
+        for (uint256 i = 1; i <= uniquesCount; i++) {
+            uint256 selectedToken = geneGenerator.random() % maxSupply;
+            require(selectedToken != 0, "Token Id cannot be 0");
             _uniqueGenes[selectedToken] = true;
         }
     }
 
     function addToPresaleList(address[] calldata entries) external onlyOwner {
-        for(uint256 i = 0; i < entries.length; i++) {
+        for (uint256 i = 0; i < entries.length; i++) {
             require(entries[i] != address(0), "Null address");
             require(!presaleList[entries[i]], "Duplicate entry");
             presaleList[entries[i]] = true;
-        }   
+        }
     }
 
     function isPresale() public view returns (bool) {
-        if (block.timestamp > presaleStart && block.timestamp < officialSaleStart) {
+        if (
+            block.timestamp > presaleStart &&
+            block.timestamp < officialSaleStart
+        ) {
             return true;
         } else {
             return false;
@@ -126,9 +135,10 @@ contract Metapass is
         return presaleList[_address];
     }
 
+    // TODO: Decide how the unique genes will be represented (depends if they are compatible with the general traits)
     function setGene(uint256 tokenId) internal returns (uint256) {
         if (_uniqueGenes[tokenId]) {
-            return tokenId;
+            return MAX_INT.sub(tokenId);
         } else {
             return geneGenerator.random();
         }
@@ -160,44 +170,38 @@ contract Metapass is
     }
 
     function reserveMint(uint256 amount) external override onlyOwner {
-        require(_tokenIdTracker.current().add(amount) <= maxSupply, "Total supply reached");
-        require(balanceOf(msg.sender).add(amount) <= reservedNFTsCount, "Mint limit exceeded");
+        require(
+            _tokenIdTracker.current().add(amount) <= maxSupply,
+            "Total supply reached"
+        );
+        require(
+            balanceOf(_msgSender()).add(amount) <= reservedNFTsCount,
+            "Mint limit exceeded"
+        );
+        require(isPresale(), "Presale not started/already finished");
 
-        for (uint256 i = 0; i < amount; i++) {
-            _tokenIdTracker.increment();
-
-            uint256 tokenId = _tokenIdTracker.current();
-            _genes[tokenId] = setGene(tokenId);
-            _mint(_msgSender(), tokenId);
-            _registerFees(tokenId);
-
-            emit TokenMinted(tokenId, _genes[tokenId]);
-            emit TokenMorphed(
-                tokenId,
-                0,
-                _genes[tokenId],
-                metapassPrice,
-                MetapassEventType.MINT
-            );
-        }
+        _mint(amount);
     }
 
     function mint() public payable override nonReentrant {
         require(_tokenIdTracker.current() < maxSupply, "Total supply reached");
         require(!isPresale() && isSale(), "Official sale not started");
 
-        if (isInPresaleWhitelist(msg.sender)) {
-            require(balanceOf(msg.sender) < maxNFTsPerWallet.add(maxNFTsPerWalletPresale), "Mint limit exceeded");
+        if (isInPresaleWhitelist(_msgSender())) {
+            require(
+                balanceOf(_msgSender()) <
+                    maxNFTsPerWallet.add(maxNFTsPerWalletPresale),
+                "Mint limit exceeded"
+            );
         } else {
-            require(balanceOf(msg.sender) < maxNFTsPerWallet, "Mint limit exceeded");
+            require(
+                balanceOf(_msgSender()) < maxNFTsPerWallet,
+                "Mint limit exceeded"
+            );
         }
-
-        _tokenIdTracker.increment();
-
-        uint256 tokenId = _tokenIdTracker.current();
-        _genes[tokenId] = setGene(tokenId);
-
-        (bool transferToDaoStatus, ) = daoAddress.call{value: metapassPrice}("");
+        (bool transferToDaoStatus, ) = daoAddress.call{value: metapassPrice}(
+            ""
+        );
         require(
             transferToDaoStatus,
             "Address: unable to send value, recipient may have reverted"
@@ -210,18 +214,7 @@ contract Metapass is
             }("");
             require(returnExcessStatus, "Failed to return excess.");
         }
-
-        _mint(_msgSender(), tokenId);
-        _registerFees(tokenId);
-
-        emit TokenMinted(tokenId, _genes[tokenId]);
-        emit TokenMorphed(
-            tokenId,
-            0,
-            _genes[tokenId],
-            metapassPrice,
-            MetapassEventType.MINT
-        );
+        _mint(1);
     }
 
     function _registerFees(uint256 _tokenId) internal {
@@ -241,16 +234,15 @@ contract Metapass is
 
     function presaleMint() public payable override nonReentrant {
         require(_tokenIdTracker.current() < maxSupply, "Total supply reached");
-        require(isInPresaleWhitelist(msg.sender), "Not in presale list");
+        require(isInPresaleWhitelist(_msgSender()), "Not in presale list");
         require(isPresale(), "Presale not started/already finished");
-        require(balanceOf(msg.sender) < maxNFTsPerWalletPresale, "Presale mint limit exceeded");
-
-        _tokenIdTracker.increment();
-
-        uint256 tokenId = _tokenIdTracker.current();
-        _genes[tokenId] = setGene(tokenId);
-
-        (bool transferToDaoStatus, ) = daoAddress.call{value: metapassPrice}("");
+        require(
+            balanceOf(_msgSender()) < maxNFTsPerWalletPresale,
+            "Presale mint limit exceeded"
+        );
+        (bool transferToDaoStatus, ) = daoAddress.call{value: metapassPrice}(
+            ""
+        );
         require(
             transferToDaoStatus,
             "Address: unable to send value, recipient may have reverted"
@@ -263,18 +255,7 @@ contract Metapass is
             }("");
             require(returnExcessStatus, "Failed to return excess.");
         }
-
-        _mint(_msgSender(), tokenId);
-        _registerFees(tokenId);
-
-        emit TokenMinted(tokenId, _genes[tokenId]);
-        emit TokenMorphed(
-            tokenId,
-            0,
-            _genes[tokenId],
-            metapassPrice,
-            MetapassEventType.MINT
-        );
+        _mint(1);
     }
 
     function bulkBuy(uint256 amount) public payable override nonReentrant {
@@ -286,15 +267,19 @@ contract Metapass is
             _tokenIdTracker.current().add(amount) <= maxSupply,
             "Total supply reached"
         );
-        require(
-            !isPresale() && isSale(), 
-            "Official sale not started"
-        );
+        require(!isPresale() && isSale(), "Official sale not started");
 
-        if (isInPresaleWhitelist(msg.sender)) {
-            require(balanceOf(msg.sender).add(amount) <= maxNFTsPerWallet.add(maxNFTsPerWalletPresale), "Mint limit exceeded");
+        if (isInPresaleWhitelist(_msgSender())) {
+            require(
+                balanceOf(_msgSender()).add(amount) <=
+                    maxNFTsPerWallet.add(maxNFTsPerWalletPresale),
+                "Mint limit exceeded"
+            );
         } else {
-            require(balanceOf(msg.sender).add(amount) <= maxNFTsPerWallet, "Mint limit exceeded");
+            require(
+                balanceOf(_msgSender()).add(amount) <= maxNFTsPerWallet,
+                "Mint limit exceeded"
+            );
         }
 
         (bool transferToDaoStatus, ) = daoAddress.call{
@@ -312,7 +297,22 @@ contract Metapass is
             }("");
             require(returnExcessStatus, "Failed to return excess.");
         }
+        _mint(amount);
+    }
 
+    function lastTokenId() public view override returns (uint256 tokenId) {
+        return _tokenIdTracker.current();
+    }
+
+    function mint(address to)
+        public
+        pure
+        override(ERC721PresetMinterPauserAutoId)
+    {
+        revert("Should not use this one");
+    }
+
+    function _mint(uint256 amount) internal {
         for (uint256 i = 0; i < amount; i++) {
             _tokenIdTracker.increment();
 
@@ -330,18 +330,6 @@ contract Metapass is
                 MetapassEventType.MINT
             );
         }
-    }
-
-    function lastTokenId() public view override returns (uint256 tokenId) {
-        return _tokenIdTracker.current();
-    }
-
-    function mint(address to)
-        public
-        pure
-        override(ERC721PresetMinterPauserAutoId)
-    {
-        revert("Should not use this one");
     }
 
     function setMetapassPrice(uint256 newMetapassPrice)
@@ -372,10 +360,25 @@ contract Metapass is
         emit BulkBuyLimitChanged(_bulkBuyLimit);
     }
 
-    function setBaseURI(string memory _baseURI) public virtual onlyDAO {
-        _setBaseURI(_baseURI);
+    function setBaseURI(string memory _baseURI)
+        public
+        virtual
+        override
+        onlyDAO
+    {
+        _baseTokenURI = _baseURI;
 
         emit BaseURIChanged(_baseURI);
+    }
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC721PresetMinterPauserAutoId, ERC165Storage, IERC165)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 
     receive() external payable {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/interfaces/IERC721.sol";
 
 interface IMetapass is IERC721 {
     function geneOf(uint256 tokenId) external view returns (uint256 gene);
@@ -21,4 +21,6 @@ interface IMetapass is IERC721 {
     function setMaxSupply(uint256 maxSupply) external;
 
     function setBulkBuyLimit(uint256 bulkBuyLimit) external;
+
+    function setBaseURI(string memory _baseURI) external;
 }
