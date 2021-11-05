@@ -34,8 +34,8 @@ contract Metapass is
     uint256 public maxNFTsPerWallet;
     uint256 public maxNFTsPerWalletPresale;
 
-    uint256 private reservedNFTsCount = 50;
-    uint256 private uniquesCount = 10;
+    uint256 public reservedNFTsCount = 50;
+    uint256 public uniquesCount = 10;
 
     event TokenMorphed(
         uint256 indexed tokenId,
@@ -96,7 +96,7 @@ contract Metapass is
         _;
     }
 
-    function generateUniques() internal {
+    function generateUniques() internal virtual {
         for (uint256 i = 1; i <= uniquesCount; i++) {
             uint256 selectedToken = geneGenerator.random() % maxSupply;
             require(selectedToken != 0, "Token Id cannot be 0");

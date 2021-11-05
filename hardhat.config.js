@@ -31,6 +31,11 @@ module.exports = {
         url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
         accounts: [process.env.WALLET_PK]
       },
+      hardhat: {
+        accounts: {
+          count: 150,
+        },
+      }
     },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY
