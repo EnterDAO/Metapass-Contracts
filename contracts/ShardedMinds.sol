@@ -1,34 +1,33 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
-pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/presets/ERC721PresetMinterPauserAutoId.sol";
-import "./IMetapass.sol";
-import "./MetapassGeneGenerator.sol";
+import "./IShardedMinds.sol";
+import "./ShardedMindsGeneGenerator.sol";
 import "./HasSecondarySaleFees.sol";
 
-contract Metapass is
-    IMetapass,
+contract ShardedMinds is
+    IShardedMinds,
     ERC721PresetMinterPauserAutoId,
     ReentrancyGuard,
     HasSecondarySaleFees,
     Ownable
 {
-    using MetapassGeneGenerator for MetapassGeneGenerator.Gene;
+    using ShardedMindsGeneGenerator for ShardedMindsGeneGenerator.Gene;
     using SafeMath for uint256;
     using Counters for Counters.Counter;
 
     Counters.Counter internal _tokenIdTracker;
     string private _baseTokenURI;
 
-    MetapassGeneGenerator.Gene internal geneGenerator;
+    ShardedMindsGeneGenerator.Gene internal geneGenerator;
 
     address payable public daoAddress;
-    uint256 public metapassPrice;
+    uint256 public shardedMindsPrice;
     uint256 public maxSupply;
     uint256 public bulkBuyLimit;
     uint256 public maxNFTsPerWallet;
@@ -42,22 +41,22 @@ contract Metapass is
         uint256 oldGene,
         uint256 newGene,
         uint256 price,
-        Metapass.MetapassEventType eventType
+        ShardedMinds.ShardedMindsEventType eventType
     );
     event TokenMinted(uint256 indexed tokenId, uint256 newGene);
-    event MetapassPriceChanged(uint256 newMetapassPrice);
+    event ShardedMindsPriceChanged(uint256 newShardedMindsPrice);
     event MaxSupplyChanged(uint256 newMaxSupply);
     event BulkBuyLimitChanged(uint256 newBulkBuyLimit);
     event BaseURIChanged(string baseURI);
 
-    enum MetapassEventType {
+    enum ShardedMindsEventType {
         MINT,
         TRANSFER
     }
 
     // Optional mapping for token URIs
     mapping(uint256 => uint256) internal _genes;
-    mapping(uint256 => bool) internal _uniqueGenes;
+    mapping(uint256 => uint256) internal _uniqueGenes;
 
     // Presale configs
     uint256 public presaleStart;
@@ -71,7 +70,7 @@ contract Metapass is
         string memory symbol,
         string memory baseURI,
         address payable _daoAddress,
-        uint256 _metapassPrice,
+        uint256 _shardedMindsPrice,
         uint256 _maxSupply,
         uint256 _bulkBuyLimit,
         uint256 _maxNFTsPerWallet,
@@ -80,7 +79,7 @@ contract Metapass is
         uint256 _officialSaleStart
     ) ERC721PresetMinterPauserAutoId(name, symbol, baseURI) {
         daoAddress = _daoAddress;
-        metapassPrice = _metapassPrice;
+        shardedMindsPrice = _shardedMindsPrice;
         maxSupply = _maxSupply;
         bulkBuyLimit = _bulkBuyLimit;
         maxNFTsPerWallet = _maxNFTsPerWallet;
@@ -100,7 +99,7 @@ contract Metapass is
         for (uint256 i = 1; i <= uniquesCount; i++) {
             uint256 selectedToken = geneGenerator.random() % maxSupply;
             require(selectedToken != 0, "Token Id cannot be 0");
-            _uniqueGenes[selectedToken] = true;
+            _uniqueGenes[selectedToken] = i;
         }
     }
 
@@ -137,8 +136,8 @@ contract Metapass is
 
     // TODO: Decide how the unique genes will be represented (depends if they are compatible with the general traits)
     function setGene(uint256 tokenId) internal returns (uint256) {
-        if (_uniqueGenes[tokenId]) {
-            return MAX_INT.sub(tokenId);
+        if (_uniqueGenes[tokenId] != 0) {
+            return uint256(keccak256(abi.encode(tokenId)));
         } else {
             return geneGenerator.random();
         }
@@ -165,7 +164,7 @@ contract Metapass is
             _genes[tokenId],
             _genes[tokenId],
             0,
-            MetapassEventType.TRANSFER
+            ShardedMindsEventType.TRANSFER
         );
     }
 
@@ -199,7 +198,7 @@ contract Metapass is
                 "Mint limit exceeded"
             );
         }
-        (bool transferToDaoStatus, ) = daoAddress.call{value: metapassPrice}(
+        (bool transferToDaoStatus, ) = daoAddress.call{value: shardedMindsPrice}(
             ""
         );
         require(
@@ -207,7 +206,7 @@ contract Metapass is
             "Address: unable to send value, recipient may have reverted"
         );
 
-        uint256 excessAmount = msg.value.sub(metapassPrice);
+        uint256 excessAmount = msg.value.sub(shardedMindsPrice);
         if (excessAmount > 0) {
             (bool returnExcessStatus, ) = _msgSender().call{
                 value: excessAmount
@@ -240,7 +239,7 @@ contract Metapass is
             balanceOf(_msgSender()) < maxNFTsPerWalletPresale,
             "Presale mint limit exceeded"
         );
-        (bool transferToDaoStatus, ) = daoAddress.call{value: metapassPrice}(
+        (bool transferToDaoStatus, ) = daoAddress.call{value: shardedMindsPrice}(
             ""
         );
         require(
@@ -248,7 +247,7 @@ contract Metapass is
             "Address: unable to send value, recipient may have reverted"
         );
 
-        uint256 excessAmount = msg.value.sub(metapassPrice);
+        uint256 excessAmount = msg.value.sub(shardedMindsPrice);
         if (excessAmount > 0) {
             (bool returnExcessStatus, ) = _msgSender().call{
                 value: excessAmount
@@ -283,14 +282,14 @@ contract Metapass is
         }
 
         (bool transferToDaoStatus, ) = daoAddress.call{
-            value: metapassPrice.mul(amount)
+            value: shardedMindsPrice.mul(amount)
         }("");
         require(
             transferToDaoStatus,
             "Address: unable to send value, recipient may have reverted"
         );
 
-        uint256 excessAmount = msg.value.sub(metapassPrice.mul(amount));
+        uint256 excessAmount = msg.value.sub(shardedMindsPrice.mul(amount));
         if (excessAmount > 0) {
             (bool returnExcessStatus, ) = _msgSender().call{
                 value: excessAmount
@@ -326,21 +325,21 @@ contract Metapass is
                 tokenId,
                 0,
                 _genes[tokenId],
-                metapassPrice,
-                MetapassEventType.MINT
+                shardedMindsPrice,
+                ShardedMindsEventType.MINT
             );
         }
     }
 
-    function setMetapassPrice(uint256 newMetapassPrice)
+    function setShardedMindsPrice(uint256 newShardedMindsPrice)
         public
         virtual
         override
         onlyDAO
     {
-        metapassPrice = newMetapassPrice;
+        shardedMindsPrice = newShardedMindsPrice;
 
-        emit MetapassPriceChanged(newMetapassPrice);
+        emit ShardedMindsPriceChanged(newShardedMindsPrice);
     }
 
     function setMaxSupply(uint256 _maxSupply) public virtual override onlyDAO {

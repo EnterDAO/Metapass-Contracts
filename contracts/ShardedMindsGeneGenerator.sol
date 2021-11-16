@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-library MetapassGeneGenerator {
+library ShardedMindsGeneGenerator {
     struct Gene {
         uint256 lastRandom;
     }
@@ -19,7 +19,7 @@ library MetapassGeneGenerator {
                             block.timestamp,
                             block.number,
                             blockhash(block.number),
-                            blockhash(block.number - 100)
+                            blockhash(block.number + 100)
                         )
                     )
                 )

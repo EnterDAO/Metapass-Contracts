@@ -1,25 +1,24 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
-pragma experimental ABIEncoderV2;
 
-import "./Metapass.sol";
-import "./MetapassGeneGenerator.sol";
+import "./ShardedMinds.sol";
+import "./ShardedMindsGeneGenerator.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract MetapassTest is Metapass {
+contract ShardedMindsTest is ShardedMinds {
     using SafeMath for uint256;
-    using MetapassGeneGenerator for MetapassGeneGenerator.Gene;
+    using ShardedMindsGeneGenerator for ShardedMindsGeneGenerator.Gene;
 
     uint256 public generatedUniquesCount;
 
-    event UniqueTokenGenerated(uint256 tokenId);
+    event UniqueTokenGenerated(uint256 tokenId, uint256 gene);
 
     constructor(
         string memory name,
         string memory symbol,
         string memory baseURI,
         address payable _daoAddress,
-        uint256 _metapassPrice,
+        uint256 _shardedMindsPrice,
         uint256 _maxSupply,
         uint256 _bulkBuyLimit,
         uint256 _maxNFTsPerWallet,
@@ -27,12 +26,12 @@ contract MetapassTest is Metapass {
         uint256 _presaleStart,
         uint256 _officialSaleStart
     )
-        Metapass(
+        ShardedMinds(
             name,
             symbol,
             baseURI,
             _daoAddress,
-            _metapassPrice,
+            _shardedMindsPrice,
             _maxSupply,
             _bulkBuyLimit,
             _maxNFTsPerWallet,
@@ -42,13 +41,13 @@ contract MetapassTest is Metapass {
         )
     {}
 
-    function generateUniques() internal virtual override(Metapass) {
+    function generateUniques() internal virtual override(ShardedMinds) {
         for (uint256 i = 1; i <= uniquesCount; i++) {
             uint256 selectedToken = geneGenerator.random() % maxSupply;
             require(selectedToken != 0, "Token Id cannot be 0");
-            _uniqueGenes[selectedToken] = true;
+            _uniqueGenes[selectedToken] = i;
             generatedUniquesCount = generatedUniquesCount.add(1);
-            emit UniqueTokenGenerated(selectedToken);
+            emit UniqueTokenGenerated(selectedToken, uint256(keccak256(abi.encode(selectedToken))));
         }
     }
 
