@@ -32,7 +32,7 @@ async function main() {
   );
 
   await shardedMinds.deployed();
-  await shardedMinds.addToPresaleList(whitelist.slice(0, 1000));
+  await shardedMinds.addToPresaleList(whitelist.slice(0, 500));
   console.log("ShardedMinds deployed to:", shardedMinds.address);
 }
 

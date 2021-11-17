@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -8,13 +8,13 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/presets/ERC721PresetMinterPauserAutoId.sol";
 import "./IShardedMinds.sol";
 import "./ShardedMindsGeneGenerator.sol";
-import "./HasSecondarySaleFees.sol";
+import "./ERC2981Royalties.sol";
 
 contract ShardedMinds is
     IShardedMinds,
     ERC721PresetMinterPauserAutoId,
     ReentrancyGuard,
-    HasSecondarySaleFees,
+    ERC2981Royalties,
     Ownable
 {
     using ShardedMindsGeneGenerator for ShardedMindsGeneGenerator.Gene;
@@ -35,6 +35,7 @@ contract ShardedMinds is
 
     uint256 public reservedNFTsCount = 50;
     uint256 public uniquesCount = 10;
+    uint256 public royaltyFeeBps = 250;
 
     event TokenMorphed(
         uint256 indexed tokenId,
@@ -216,21 +217,6 @@ contract ShardedMinds is
         _mint(1);
     }
 
-    function _registerFees(uint256 _tokenId) internal {
-        address[] memory _recipients = new address[](1);
-        uint256[] memory _bps = new uint256[](1);
-
-        _recipients[0] = daoAddress;
-        _bps[0] = 1000;
-
-        Fee memory _fee = Fee({
-            recipient: payable(_recipients[0]),
-            value: _bps[0]
-        });
-        fees[_tokenId].push(_fee);
-        emit SecondarySaleFees(_tokenId, _recipients, _bps);
-    }
-
     function presaleMint() public payable override nonReentrant {
         require(_tokenIdTracker.current() < maxSupply, "Total supply reached");
         require(isInPresaleWhitelist(_msgSender()), "Not in presale list");
@@ -318,7 +304,7 @@ contract ShardedMinds is
             uint256 tokenId = _tokenIdTracker.current();
             _genes[tokenId] = setGene(tokenId);
             _mint(_msgSender(), tokenId);
-            _registerFees(tokenId);
+            _setTokenRoyalty(tokenId, daoAddress, royaltyFeeBps);
 
             emit TokenMinted(tokenId, _genes[tokenId]);
             emit TokenMorphed(
