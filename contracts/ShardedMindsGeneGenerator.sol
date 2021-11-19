@@ -19,7 +19,7 @@ library ShardedMindsGeneGenerator {
                             block.timestamp,
                             block.number,
                             blockhash(block.number),
-                            blockhash(block.number + 100)
+                            blockhash(block.number - 100)
                         )
                     )
                 )

@@ -64,8 +64,6 @@ contract ShardedMinds is
     uint256 public officialSaleStart;
     mapping(address => bool) public presaleList;
 
-    uint256 constant MAX_INT = 2**256 - 1;
-
     constructor(
         string memory name,
         string memory symbol,
