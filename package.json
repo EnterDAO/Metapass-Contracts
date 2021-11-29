@@ -1,5 +1,5 @@
 {
-  "name": "metapass-contracts",
+  "name": "sharded-minds-contracts",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -22,7 +22,7 @@
     "hardhat-abi-exporter": "^2.2.1"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^3.4.1",
+    "@openzeppelin/contracts": "^4.3.2",
     "dotenv": "^10.0.0"
   }
 }

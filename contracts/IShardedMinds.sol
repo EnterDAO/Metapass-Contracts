@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.7.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/interfaces/IERC721.sol";
 
-interface IMetapass is IERC721 {
+interface IShardedMinds is IERC721 {
     function geneOf(uint256 tokenId) external view returns (uint256 gene);
 
     function mint() external payable;
@@ -16,9 +16,11 @@ interface IMetapass is IERC721 {
 
     function lastTokenId() external view returns (uint256 tokenId);
 
-    function setMetapassPrice(uint256 newLobsterPrice) external;
+    function setShardedMindsPrice(uint256 newLobsterPrice) external;
 
     function setMaxSupply(uint256 maxSupply) external;
 
     function setBulkBuyLimit(uint256 bulkBuyLimit) external;
+
+    function setBaseURI(string memory _baseURI) external;
 }

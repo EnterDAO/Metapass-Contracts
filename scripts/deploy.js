@@ -16,14 +16,14 @@ async function main() {
 
   // We get the contract to deploy
   console.log("Starting deploy...")
-  const Metapass = await hre.ethers.getContractFactory("Metapass");
-  const metapass = await Metapass.deploy(
+  const ShardedMinds = await hre.ethers.getContractFactory("ShardedMindsTest");
+  const shardedMinds = await ShardedMinds.deploy(
     process.env.COLLECTION_NAME,
     process.env.TOKEN_NAME,
     process.env.METADATA_URI,
     process.env.DAO_ADDRESS,
     ethers.utils.parseEther(process.env.MINT_PRICE),
-    process.env.METAPASS_SUPPLY,
+    process.env.SHARDED_MINDS_SUPPLY,
     process.env.BULK_BUY_LIMIT,
     process.env.MAX_NFTS_PER_WALLET,
     process.env.MAX_NFTS_PER_WALLET_PRESALE,
@@ -31,9 +31,9 @@ async function main() {
     process.env.OFFICIAL_SALE_START,
   );
 
-  await metapass.deployed();
-  await metapass.addToPresaleList(whitelist.slice(0, 1000));
-  console.log("Metapass deployed to:", metapass.address);
+  await shardedMinds.deployed();
+  await shardedMinds.addToPresaleList(whitelist.slice(0, 500));
+  console.log("ShardedMinds deployed to:", shardedMinds.address);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

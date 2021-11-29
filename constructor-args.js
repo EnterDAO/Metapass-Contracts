@@ -4,7 +4,7 @@ module.exports = [
   process.env.METADATA_URI,
   process.env.DAO_ADDRESS,
   ethers.utils.parseEther(process.env.MINT_PRICE),
-  process.env.METAPASS_SUPPLY,
+  process.env.SHARDED_MINDS_SUPPLY,
   process.env.BULK_BUY_LIMIT,
   process.env.MAX_NFTS_PER_WALLET,
   process.env.MAX_NFTS_PER_WALLET_PRESALE,
