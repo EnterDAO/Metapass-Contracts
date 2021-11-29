@@ -96,8 +96,7 @@ contract ShardedMinds is
 
     function generateUniques() internal virtual {
         for (uint256 i = 1; i <= uniquesCount; i++) {
-            uint256 selectedToken = geneGenerator.random() % maxSupply;
-            require(selectedToken != 0, "Token Id cannot be 0");
+            uint256 selectedToken = (geneGenerator.random() % (maxSupply - 1)) + 1;
             _uniqueGenes[selectedToken] = i;
         }
     }
@@ -111,22 +110,11 @@ contract ShardedMinds is
     }
 
     function isPresale() public view returns (bool) {
-        if (
-            block.timestamp > presaleStart &&
-            block.timestamp < officialSaleStart
-        ) {
-            return true;
-        } else {
-            return false;
-        }
+        return (block.timestamp > presaleStart && block.timestamp < officialSaleStart);
     }
 
     function isSale() public view returns (bool) {
-        if (block.timestamp > officialSaleStart) {
-            return true;
-        } else {
-            return false;
-        }
+        return (block.timestamp > officialSaleStart);
     }
 
     function isInPresaleWhitelist(address _address) public view returns (bool) {

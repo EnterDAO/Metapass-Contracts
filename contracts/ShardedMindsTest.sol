@@ -43,11 +43,8 @@ contract ShardedMindsTest is ShardedMinds {
 
     function generateUniques() internal virtual override(ShardedMinds) {
         for (uint256 i = 1; i <= uniquesCount; i++) {
-            uint256 selectedToken = geneGenerator.random() % maxSupply;
-            require(selectedToken != 0, "Token Id cannot be 0");
-            _uniqueGenes[selectedToken] = i;
+            super.generateUniques();
             generatedUniquesCount = generatedUniquesCount.add(1);
-            emit UniqueTokenGenerated(selectedToken, uint256(keccak256(abi.encode(selectedToken))));
         }
     }
 

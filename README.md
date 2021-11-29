@@ -47,7 +47,13 @@ Theoretically it is possible for a miner to have a slightly bigger chance in gen
 
 ## Gene positions:
 
-- TBD
+- 0 - Background attribute
+- 1 - Skin attribute
+- 2 - Necklace attribute
+- 3 - Mouth attribute
+- 4 - Eyes attribute
+- 5 - Vortex attribute
+- 6 - Track attribute
 
 # Contracts
 
