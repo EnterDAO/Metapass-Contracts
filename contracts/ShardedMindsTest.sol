@@ -11,7 +11,7 @@ contract ShardedMindsTest is ShardedMinds {
 
     uint256 public generatedUniquesCount;
 
-    event UniqueTokenGenerated(uint256 tokenId, uint256 gene);
+    event UniqueTokenGenerated(uint256 tokenId);
 
     constructor(
         string memory name,
@@ -43,8 +43,10 @@ contract ShardedMindsTest is ShardedMinds {
 
     function generateUniques() internal virtual override(ShardedMinds) {
         for (uint256 i = 1; i <= uniquesCount; i++) {
-            super.generateUniques();
+            uint256 selectedToken = (geneGenerator.random() % (maxSupply - 1)) + 1;
+            _uniqueGenes[selectedToken] = i;
             generatedUniquesCount = generatedUniquesCount.add(1);
+            emit UniqueTokenGenerated(selectedToken);
         }
     }
 

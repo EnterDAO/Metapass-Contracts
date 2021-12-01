@@ -121,10 +121,24 @@ contract ShardedMinds is
         return presaleList[_address];
     }
 
-    // TODO: Decide how the unique genes will be represented (depends if they are compatible with the general traits)
+    function isTokenUnique(uint256 tokenId)
+        public
+        view
+        returns (bool, uint256)
+    {
+        require(_exists(tokenId), "ERC721: operator query for nonexistent token");
+        bool isUnique;
+        uint256 index;
+        if (_uniqueGenes[tokenId] != 0) {
+            isUnique = true;
+            index = _uniqueGenes[tokenId];
+        }
+        return (isUnique, index);
+    }
+
     function setGene(uint256 tokenId) internal returns (uint256) {
         if (_uniqueGenes[tokenId] != 0) {
-            return uint256(keccak256(abi.encode(tokenId)));
+            return uint256(keccak256(abi.encode(tokenId, _uniqueGenes[tokenId])));
         } else {
             return geneGenerator.random();
         }
