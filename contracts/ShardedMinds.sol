@@ -33,9 +33,9 @@ contract ShardedMinds is
     uint256 public maxNFTsPerWallet;
     uint256 public maxNFTsPerWalletPresale;
 
-    uint256 public reservedNFTsCount = 50;
-    uint256 public uniquesCount = 10;
-    uint256 public royaltyFeeBps = 250;
+    uint256 public immutable reservedNFTsCount = 50;
+    uint256 public immutable uniquesCount = 10;
+    uint256 public immutable royaltyFeeBps = 250;
 
     event TokenMorphed(
         uint256 indexed tokenId,
