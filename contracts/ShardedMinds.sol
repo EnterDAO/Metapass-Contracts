@@ -136,12 +136,8 @@ contract ShardedMinds is
         return (isUnique, index);
     }
 
-    function setGene(uint256 tokenId) internal returns (uint256) {
-        if (_uniqueGenes[tokenId] != 0) {
-            return uint256(keccak256(abi.encode(tokenId, _uniqueGenes[tokenId])));
-        } else {
-            return geneGenerator.random();
-        }
+    function setGene() internal returns (uint256) {
+        return geneGenerator.random();
     }
 
     function geneOf(uint256 tokenId)
@@ -302,7 +298,7 @@ contract ShardedMinds is
             _tokenIdTracker.increment();
 
             uint256 tokenId = _tokenIdTracker.current();
-            _genes[tokenId] = setGene(tokenId);
+            _genes[tokenId] = setGene();
             _mint(_msgSender(), tokenId);
             _setTokenRoyalty(tokenId, daoAddress, royaltyFeeBps);
 
