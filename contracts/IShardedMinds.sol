@@ -8,7 +8,7 @@ interface IShardedMinds is IERC721 {
 
     function mint() external payable;
 
-    function presaleMint() external payable;
+    function presaleMint(uint256 amount) external payable;
 
     function reserveMint(uint256 amount) external;
 

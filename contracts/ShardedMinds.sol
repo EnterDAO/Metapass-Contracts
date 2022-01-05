@@ -34,7 +34,7 @@ contract ShardedMinds is
     uint256 public maxNFTsPerWalletPresale;
 
     uint256 public immutable reservedNFTsCount = 50;
-    uint256 public immutable uniquesCount = 10;
+    uint256 public immutable uniquesCount = 7;
     uint256 public immutable royaltyFeeBps = 250;
 
     event TokenMorphed(
@@ -213,30 +213,38 @@ contract ShardedMinds is
         _mint(1);
     }
 
-    function presaleMint() public payable override nonReentrant {
-        require(_tokenIdTracker.current() < maxSupply, "Total supply reached");
-        require(isInPresaleWhitelist(_msgSender()), "Not in presale list");
-        require(isPresale(), "Presale not started/already finished");
+    function presaleMint(uint256 amount) public payable override nonReentrant {
         require(
-            balanceOf(_msgSender()) < maxNFTsPerWalletPresale,
+            amount <= maxNFTsPerWalletPresale,
+            "Cannot bulk buy more than the preset limit"
+        );
+        require(
+            _tokenIdTracker.current().add(amount) <= maxSupply,
+            "Total supply reached"
+        );
+        require(isPresale(), "Presale not started/already finished");
+        require(isInPresaleWhitelist(_msgSender()), "Not in presale list");
+        require(
+            balanceOf(_msgSender()).add(amount) <= maxNFTsPerWalletPresale,
             "Presale mint limit exceeded"
         );
-        (bool transferToDaoStatus, ) = daoAddress.call{value: shardedMindsPrice}(
-            ""
-        );
+
+        (bool transferToDaoStatus, ) = daoAddress.call{
+            value: shardedMindsPrice.mul(amount)
+        }("");
         require(
             transferToDaoStatus,
             "Address: unable to send value, recipient may have reverted"
         );
 
-        uint256 excessAmount = msg.value.sub(shardedMindsPrice);
+        uint256 excessAmount = msg.value.sub(shardedMindsPrice.mul(amount));
         if (excessAmount > 0) {
             (bool returnExcessStatus, ) = _msgSender().call{
                 value: excessAmount
             }("");
             require(returnExcessStatus, "Failed to return excess.");
         }
-        _mint(1);
+        _mint(amount);
     }
 
     function bulkBuy(uint256 amount) public payable override nonReentrant {

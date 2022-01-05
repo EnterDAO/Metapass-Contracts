@@ -7,7 +7,7 @@ const TOKEN_NAME = process.env.TOKEN_NAME;
 const METADATA_URI = process.env.METADATA_URI;
 const DAO_ADDRESS = process.env.DAO_ADDRESS;
 const MINT_PRICE = ethers.utils.parseEther(process.env.MINT_PRICE);
-const SHARDED_MINDS_SUPPLY = 65;
+const SHARDED_MINDS_SUPPLY = 80;
 const BULK_BUY_LIMIT = process.env.BULK_BUY_LIMIT;
 const MAX_NFTS_PER_WALLET = process.env.MAX_NFTS_PER_WALLET;
 const MAX_NFTS_PER_WALLET_PRESALE = process.env.MAX_NFTS_PER_WALLET_PRESALE;
@@ -58,35 +58,35 @@ describe("ShardedMinds End 2 End Tests", () => {
     expect(await shardedMindsDeployment.isInPresaleWhitelist(accounts[0].address)).to.be.false;
 
     // Check if the unique tokens are being generated
-    let uniquesCount = 10;
+    let uniquesCount = 7;
     let generatedUniquesCount = await shardedMindsDeployment.generatedUniquesCount();
     expect(uniquesCount).to.equal(generatedUniquesCount);
 
     // Try to presale mint from deployer which is not whitelisted, should revert
     await expect(
-      shardedMindsDeployment.connect(accounts[0]).functions["presaleMint()"]({
-        value: MINT_PRICE,
+      shardedMindsDeployment.connect(accounts[0]).functions["presaleMint(uint256)"](MAX_NFTS_PER_WALLET_PRESALE, {
+        value: MINT_PRICE.mul(MAX_NFTS_PER_WALLET_PRESALE),
       })
     ).revertedWith("Not in presale list");
 
     // Try to presale mint from address which is whitelisted, should pass
     await expect(
-      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint()"]({
-        value: MINT_PRICE,
+      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint(uint256)"](MAX_NFTS_PER_WALLET_PRESALE, {
+        value: MINT_PRICE.mul(MAX_NFTS_PER_WALLET_PRESALE),
       })
     ).to.be.emit(shardedMindsDeployment, "TokenMinted");
 
-    // Try to presale mint from the same address, after 1 NFT has been already minted, should revert
+    // Try to presale mint from the same address, after 2 NFTs have been already minted, should revert
     await expect(
-      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint()"]({
+      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint(uint256)"](1, {
         value: MINT_PRICE,
       })
     ).revertedWith("Presale mint limit exceeded");
 
     // Try to presale mint from another address which is whitelisted and haven't yet minted, should pass
     await expect(
-      shardedMindsDeployment.connect(accounts[2]).functions["presaleMint()"]({
-        value: MINT_PRICE,
+      shardedMindsDeployment.connect(accounts[2]).functions["presaleMint(uint256)"](MAX_NFTS_PER_WALLET_PRESALE, {
+        value: MINT_PRICE.mul(MAX_NFTS_PER_WALLET_PRESALE),
       })
     ).to.be.emit(shardedMindsDeployment, "TokenMinted");
 
@@ -111,33 +111,33 @@ describe("ShardedMinds End 2 End Tests", () => {
 
     // Try to presale mint after the presale has ended, should revert
     await expect(
-      shardedMindsDeployment.connect(accounts[3]).functions["presaleMint()"]({
+      shardedMindsDeployment.connect(accounts[3]).functions["presaleMint(uint256)"](1, {
         value: MINT_PRICE,
       })
     ).revertedWith("Presale not started/already finished");
 
-    // Non whitelisted address should be able to bulk buy up to 5, should pass
+    // Non whitelisted address should be able to bulk buy up to 10, should pass
     await expect(
-        shardedMindsDeployment.connect(accounts[51]).functions["bulkBuy(uint256)"](5, {
-            value: MINT_PRICE.mul(5),
+        shardedMindsDeployment.connect(accounts[51]).functions["bulkBuy(uint256)"](MAX_NFTS_PER_WALLET, {
+            value: MINT_PRICE.mul(MAX_NFTS_PER_WALLET),
         })
     ).to.be.emit(shardedMindsDeployment, "TokenMinted");
 
-    // Non whitelisted address should not be able to buy more NFTs, after 5 have been bought, should revert
+    // Non whitelisted address should not be able to buy more NFTs, after 10 have been bought, should revert
     await expect(
         shardedMindsDeployment.connect(accounts[51]).functions["bulkBuy(uint256)"](1, {
             value: MINT_PRICE.mul(1),
         })
     ).revertedWith("Mint limit exceeded");
 
-    // Whitelisted address should be able to buy 5 more NFTs, after minting 1 from presale
+    // Whitelisted address should be able to buy 10 more NFTs, after minting 2 from presale
     await expect(
-        shardedMindsDeployment.connect(accounts[2]).functions["bulkBuy(uint256)"](5, {
-            value: MINT_PRICE.mul(5),
+        shardedMindsDeployment.connect(accounts[2]).functions["bulkBuy(uint256)"](MAX_NFTS_PER_WALLET, {
+            value: MINT_PRICE.mul(MAX_NFTS_PER_WALLET),
         })
     ).to.be.emit(shardedMindsDeployment, "TokenMinted");
 
-    // Whitelisted address should not be able to buy more NFTs, after minting 1 from presale and 5 from official sale
+    // Whitelisted address should not be able to buy more NFTs, after minting 2 from presale and 10 from official sale
     await expect(
         shardedMindsDeployment.connect(accounts[2]).functions["bulkBuy(uint256)"](1, {
             value: MINT_PRICE.mul(1),
@@ -152,8 +152,8 @@ describe("ShardedMinds End 2 End Tests", () => {
     
     // Try to mint more than the max supply using bulkBuy, should revert
     await expect(
-        shardedMindsDeployment.connect(accounts[60]).functions["bulkBuy(uint256)"](5, {
-            value: MINT_PRICE.mul(5),
+        shardedMindsDeployment.connect(accounts[60]).functions["bulkBuy(uint256)"](MAX_NFTS_PER_WALLET, {
+            value: MINT_PRICE.mul(MAX_NFTS_PER_WALLET),
         })
     ).revertedWith("Total supply reached");
     
@@ -182,19 +182,19 @@ describe("ShardedMinds End 2 End Tests", () => {
     // Should have only 50 NFTs, from the reserve mint
     expect(account0Balance.toNumber()).to.equal(50);
 
-    // Should have only 1 NFT from whitelist
-    expect(account1Balance.toNumber()).to.equal(1);
+    // Should have only 2 NFT from whitelist
+    expect(account1Balance.toNumber()).to.equal(2);
 
-    // Should have 5 + 1 = 6 NFTs from presale and sale mint
-    expect(account2Balance.toNumber()).to.equal(6);
+    // Should have 10 + 2 = 12 NFTs from presale and sale mint
+    expect(account2Balance.toNumber()).to.equal(12);
 
     // Should have 0, as only tried to presale mint, after presale ended
     expect(account3Balance.toNumber()).to.equal(0);
 
-    // Should have 5 NFTs, minted only during official sale
-    expect(account51Balance.toNumber()).to.equal(5);
+    // Should have 10 NFTs, minted only during official sale
+    expect(account51Balance.toNumber()).to.equal(10);
 
-    // Should have only 3 NFTs, minted the last available before the max supply was reached
+    // Should have only NFTs, minted the last available before the max supply was reached
     expect(account60Balance.toNumber()).to.equal(remainingNFTsToMint);
 
   });

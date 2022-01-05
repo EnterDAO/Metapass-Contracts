@@ -60,7 +60,7 @@ describe("ShardedMinds Tests", () => {
   it("Should generate random unique tokens", async () => {
     const { shardedMindsDeployment } = await loadFixture(deployContract);
 
-    let uniquesCount = 10;
+    let uniquesCount = 7;
     let generatedUniquesCount = await shardedMindsDeployment.generatedUniquesCount();
 
     expect(uniquesCount).to.equal(generatedUniquesCount);
@@ -73,8 +73,8 @@ describe("ShardedMinds Tests", () => {
     await shardedMindsDeployment.addToPresaleList(whitelistAddresses);
 
     await expect(
-      shardedMindsDeployment.connect(accounts[0]).functions["presaleMint()"]({
-        value: MINT_PRICE,
+      shardedMindsDeployment.connect(accounts[0]).functions["presaleMint(uint256)"](MAX_NFTS_PER_WALLET_PRESALE, {
+        value: MINT_PRICE.mul(MAX_NFTS_PER_WALLET_PRESALE),
       })
     ).revertedWith("Not in presale list");
   });
@@ -86,39 +86,39 @@ describe("ShardedMinds Tests", () => {
     await shardedMindsDeployment.addToPresaleList(whitelistAddresses);
 
     await expect(
-      shardedMindsDeployment.connect(accounts[0]).functions["presaleMint()"]({
-        value: MINT_PRICE,
+      shardedMindsDeployment.connect(accounts[0]).functions["presaleMint(uint256)"](MAX_NFTS_PER_WALLET_PRESALE, {
+        value:  MINT_PRICE.mul(MAX_NFTS_PER_WALLET_PRESALE),
       })
     ).revertedWith("Not in presale list");
 
     await expect(
-      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint()"]({
-        value: MINT_PRICE,
+      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint(uint256)"](MAX_NFTS_PER_WALLET_PRESALE, {
+        value:  MINT_PRICE.mul(MAX_NFTS_PER_WALLET_PRESALE),
       })
     ).to.be.emit(shardedMindsDeployment, "TokenMinted");
 
     await expect(
-      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint()"]({
-        value: MINT_PRICE,
+      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint(uint256)"](MAX_NFTS_PER_WALLET_PRESALE, {
+        value:  MINT_PRICE.mul(MAX_NFTS_PER_WALLET_PRESALE),
       })
     ).revertedWith("Presale mint limit exceeded");
   });
 
-  it("Max 1 NFT can be minted during presale", async () => {
+  it("Max 2 NFTs can be minted during presale", async () => {
     const { shardedMindsDeployment, whitelistAddresses } = await loadFixture(deployContract);
     const accounts = await ethers.getSigners();
 
     await shardedMindsDeployment.addToPresaleList(whitelistAddresses);
 
     await expect(
-      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint()"]({
-        value: MINT_PRICE,
+      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint(uint256)"](MAX_NFTS_PER_WALLET_PRESALE, {
+        value:  MINT_PRICE.mul(MAX_NFTS_PER_WALLET_PRESALE),
       })
     ).to.be.emit(shardedMindsDeployment, "TokenMinted");
 
     await expect(
-      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint()"]({
-        value: MINT_PRICE,
+      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint(uint256)"](MAX_NFTS_PER_WALLET_PRESALE, {
+        value:  MINT_PRICE.mul(MAX_NFTS_PER_WALLET_PRESALE),
       })
     ).revertedWith("Presale mint limit exceeded");
   });
@@ -156,7 +156,7 @@ describe("ShardedMinds Tests", () => {
     ).revertedWith("Presale not started/already finished");
   });
 
-  it("Max 5 NFTs for non-whitelisted wallet can be minted during official sale", async () => {
+  it("Max 10 NFTs for non-whitelisted wallet can be minted during official sale", async () => {
     const { shardedMindsDeployment, whitelistAddresses } = await loadFixture(deployContract);
     const accounts = await ethers.getSigners();
 
@@ -166,8 +166,8 @@ describe("ShardedMinds Tests", () => {
     await ethers.provider.send('evm_mine');
 
     await expect(
-      shardedMindsDeployment.connect(accounts[51]).functions["bulkBuy(uint256)"](5, {
-        value: MINT_PRICE.mul(5),
+      shardedMindsDeployment.connect(accounts[51]).functions["bulkBuy(uint256)"](MAX_NFTS_PER_WALLET, {
+        value: MINT_PRICE.mul(MAX_NFTS_PER_WALLET),
       })
     ).to.be.emit(shardedMindsDeployment, "TokenMinted");
 
@@ -178,15 +178,15 @@ describe("ShardedMinds Tests", () => {
     ).revertedWith("Mint limit exceeded");
   });
 
-  it("Max 6 NFTs for whitelisted wallet can be minted during presale and official sale", async () => {
+  it("Max 12 NFTs for whitelisted wallet can be minted during presale and official sale", async () => {
     const { shardedMindsDeployment, whitelistAddresses } = await loadFixture(deployContract);
     const accounts = await ethers.getSigners();
 
     await shardedMindsDeployment.addToPresaleList(whitelistAddresses);
 
     await expect(
-      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint()"]({
-        value: MINT_PRICE,
+      shardedMindsDeployment.connect(accounts[1]).functions["presaleMint(uint256)"](MAX_NFTS_PER_WALLET_PRESALE, {
+        value: MINT_PRICE.mul(MAX_NFTS_PER_WALLET_PRESALE),
       })
     ).to.be.emit(shardedMindsDeployment, "TokenMinted");
 
@@ -194,8 +194,8 @@ describe("ShardedMinds Tests", () => {
     await ethers.provider.send('evm_mine');
 
     await expect(
-      shardedMindsDeployment.connect(accounts[1]).functions["bulkBuy(uint256)"](5, {
-        value: MINT_PRICE.mul(5),
+      shardedMindsDeployment.connect(accounts[1]).functions["bulkBuy(uint256)"](MAX_NFTS_PER_WALLET, {
+        value: MINT_PRICE.mul(MAX_NFTS_PER_WALLET),
       })
     ).to.be.emit(shardedMindsDeployment, "TokenMinted");
 
@@ -206,7 +206,7 @@ describe("ShardedMinds Tests", () => {
     ).revertedWith("Mint limit exceeded");
   });
 
-  it("Bulk buy should mint max 5 NFTs in one call", async () => {
+  it("Bulk buy should mint max 10 NFTs in one call", async () => {
     const { shardedMindsDeployment, whitelistAddresses } = await loadFixture(deployContract);
     const accounts = await ethers.getSigners();
 
