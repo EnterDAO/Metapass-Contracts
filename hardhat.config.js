@@ -54,10 +54,4 @@ module.exports = {
     runOnCompile: true,
     disambiguatePaths: false,
   },
-  // abiExporter: {
-  //   path: './abis',
-  //   clear: true,
-  //   flat: true,
-  //   spacing: 2
-  // }
 };
