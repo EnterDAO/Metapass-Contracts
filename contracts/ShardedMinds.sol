@@ -36,7 +36,6 @@ contract ShardedMinds is
     uint256 public immutable reservedNFTsCount = 50;
     uint256 public immutable uniquesCount = 7;
     uint256 public immutable royaltyFeeBps = 250;
-    address public immutable multisigAddress = 0x4695377aE36C93Ef5efCe6EF9e3BbFA5C997CABB;
 
     event TokenMorphed(
         uint256 indexed tokenId,
@@ -196,7 +195,7 @@ contract ShardedMinds is
                 "Mint limit exceeded"
             );
         }
-        (bool transferToDaoStatus, ) = multisigAddress.call{value: shardedMindsPrice}(
+        (bool transferToDaoStatus, ) = daoAddress.call{value: shardedMindsPrice}(
             ""
         );
         require(
@@ -230,7 +229,7 @@ contract ShardedMinds is
             "Presale mint limit exceeded"
         );
 
-        (bool transferToDaoStatus, ) = multisigAddress.call{
+        (bool transferToDaoStatus, ) = daoAddress.call{
             value: shardedMindsPrice.mul(amount)
         }("");
         require(
@@ -272,7 +271,7 @@ contract ShardedMinds is
             );
         }
 
-        (bool transferToDaoStatus, ) = multisigAddress.call{
+        (bool transferToDaoStatus, ) = daoAddress.call{
             value: shardedMindsPrice.mul(amount)
         }("");
         require(
